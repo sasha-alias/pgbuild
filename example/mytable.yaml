@@ -1,0 +1,5 @@
+table: pgbuild_example.mytable
+columns:
+    - id: serial
+    - name: text
+primary_key: [id]

@@ -1,0 +1,4 @@
+my_shard:
+    - schema: pgbuild_example
+    - table: mytable.yaml
+    - function: myfunction.sql

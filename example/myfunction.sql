@@ -1,0 +1,8 @@
+CREATE OR REPLACE FUNCTION pgbuild_example.myfunction()
+RETURNS void AS
+$$
+BEGIN
+    RETURN;
+END;
+$$
+LANGUAGE plpgsql SECURITY DEFINER;

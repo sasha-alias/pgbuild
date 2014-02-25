@@ -1,9 +1,9 @@
-pgbuild - simple deployment for Postgresql
-=======
+# pgbuild 
+simple deployment for Postgresql
 
 Pgbuild allows to describe database application using simple YAML syntax.
 
-# Database Description
+### Database Description
 
 Every database objects should be described in a separate yaml or sql file.
 
@@ -53,13 +53,13 @@ For stored functions it is even simpler, just store them in sql files with CREAT
 
 Now to put it all together:
     
-    - mydb:
+    - myapp:
         - schema: myschema
         - table: path/to/mytable.yaml
         - type: path/to/mytype.yaml
         - function: path/to/myfunction.sql
 
-# Objects Deployment and Diffing
+### Objects Deployment and Diffing
 
 In order to deploy a table described in yaml file to a single instance of database use the following command:
 
@@ -80,16 +80,20 @@ For example diff local table from file and existing from database:
 
 The similar way by defining different targets it's possible to compare remote and local tables in any combination.
 
-# Application or Component Deployment
+### Application or Component Deployment
 
 In order to deploy a database application or a single component you have to describe it first using yaml syntax as described above.
 Then you can create a build.
 
     pgbuild path/to/myapp.yaml local/destination/path
 
-Build contains ready to deploy sql scripts. 
+Build contains ready to deploy sql scripts.
+By default scripts are created for being run with psql.
+
+It's possible though to create playbooks for Ansible by defining a builder:
+
+    pgbuild path/to/myapp.yaml local/destination/path --builder=ansible
+
 So you can deploy them either using psql or Ansible.
-
-
 
 
