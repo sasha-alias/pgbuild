@@ -92,7 +92,7 @@ By default scripts are created for being run with psql.
 
 It's possible though to create playbooks for Ansible by defining a builder:
 
-    pgbuild path/to/myapp.yaml local/destination/path --builder=ansible
+    pgbuild path/to/myapp.yaml local/destination/path --format=ansible
 
 So you can deploy them either using psql or Ansible.
 
