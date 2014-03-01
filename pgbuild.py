@@ -47,14 +47,14 @@ if __name__ == '__main__':
     try:
 
         if args[0] == 'ddl':  # show yaml table DDL
-                table = pgbuild.Table.load_from_location(args[2])
+                table = pgbuild.Table.load_from_location(args[1])
                 print table.create_clause()
 
         elif args[0] == 'diff':  # shows ALTER 1st to 2nd
 
             if len(args) == 3:
-                table1 = pgbuild.Table.load_from_location(args[2])
-                table2 = pgbuild.Table.load_from_location(args[3])
+                table1 = pgbuild.Table.load_from_location(args[1])
+                table2 = pgbuild.Table.load_from_location(args[2])
                 print table1.alter_to(table2)
 
         elif args[0] == 'deploy':
