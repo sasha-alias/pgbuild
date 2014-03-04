@@ -529,10 +529,12 @@ class Table(object):
             columns,
             primary_key,
             indexes,
-            check
+            check,
+            inherits
         """
 
         self.name = None
+        self.inherits = []
         self.description = None
         self.columns = []
         self.primary_key = []
@@ -549,6 +551,12 @@ class Table(object):
             origin_yaml = table
         else:
             raise YamlTableError("Unknown table representation type, dict or str expected")
+
+
+        _inherits = origin_yaml.get('inherits')
+        if isinstance(_inherits, str):
+            _inherits = [_inherits]
+        self.inherits.extend(_inherits)
 
         self.name = origin_yaml['table']
         self.description = origin_yaml.get('description')
@@ -581,7 +589,12 @@ class Table(object):
 
     def create_clause(self):
 
-        create_clause = "CREATE TABLE IF NOT EXISTS %s (\n%s\n);\n" % (self.name, self.columns.create_clause())
+        if self.inherits:
+            inherits_clause = ' INHERITS (%s) ' % ', '.join(self.inherits)
+        else:
+            inherits_clause = ''
+
+        create_clause = "CREATE TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.name, self.columns.create_clause(), inherits_clause)
 
         if self.primary_key:
             pk_clause = "ALTER TABLE %s ADD PRIMARY KEY (%s);\n" % (self.name, ', '.join(c.name for c in self.primary_key))
