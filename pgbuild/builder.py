@@ -25,7 +25,7 @@ shard_role_tasks = """
 
 - name: run install.sql
   command: psql -f {{deployer_home}}/.pgbuild/run/install.sql -d {{cluster_name}}{{'_%02d'|format(item)}} -p {{port}} --set=ON_ERROR_STOP=1
-  with_items: host.shards
+  with_items: hostvars[inventory_hostname].shards
   sudo: yes
   sudo_user: postgres
 
