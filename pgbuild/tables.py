@@ -553,7 +553,7 @@ class Table(object):
             raise YamlTableError("Unknown table representation type, dict or str expected")
 
 
-        _inherits = origin_yaml.get('inherits')
+        _inherits = origin_yaml.get('inherits', [])
         if isinstance(_inherits, str):
             _inherits = [_inherits]
         self.inherits.extend(_inherits)

@@ -44,27 +44,27 @@ if __name__ == '__main__':
     parser.add_option('--format', dest='build_format', default='psql')
     (options, args) = parser.parse_args()
 
-    try:
+    #try:
 
-        if args[0] == 'ddl':  # show yaml table DDL
-                table = pgbuild.Table.load_from_location(args[1])
-                print table.create_clause()
+    if args[0] == 'ddl':  # show yaml table DDL
+            table = pgbuild.Table.load_from_location(args[1])
+            print table.create_clause()
 
-        elif args[0] == 'diff':  # shows ALTER 1st to 2nd
+    elif args[0] == 'diff':  # shows ALTER 1st to 2nd
 
-            if len(args) == 3:
-                table1 = pgbuild.Table.load_from_location(args[1])
-                table2 = pgbuild.Table.load_from_location(args[2])
-                print table1.alter_to(table2)
+        if len(args) == 3:
+            table1 = pgbuild.Table.load_from_location(args[1])
+            table2 = pgbuild.Table.load_from_location(args[2])
+            print table1.alter_to(table2)
 
-        elif args[0] == 'deploy':
-            deploy(args[1], args[2])
+    elif args[0] == 'deploy':
+        deploy(args[1], args[2])
 
-        elif args[0] == 'build':
-            build(args[1], args[2], options.build_format)
+    elif args[0] == 'build':
+        build(args[1], args[2], options.build_format)
 
-        else:
-            print red('Error:'), 'unknown command %s' % args[1]
+    else:
+        print red('Error:'), 'unknown command %s' % args[1]
 
-    except Exception, e:
-        print red('Error'), e
+    #except Exception, e:
+    #    print red('Error'), e
