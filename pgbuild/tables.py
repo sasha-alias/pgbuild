@@ -530,7 +530,8 @@ class Table(object):
             primary_key,
             indexes,
             check,
-            inherits
+            inherits,
+            mode
         """
 
         self.name = None
@@ -540,6 +541,7 @@ class Table(object):
         self.primary_key = []
         self.indexes = []
         self.check = []
+        self.mode = ''
 
         self._load(table)
 
@@ -594,7 +596,7 @@ class Table(object):
         else:
             inherits_clause = ''
 
-        create_clause = "CREATE TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.name, self.columns.create_clause(), inherits_clause)
+        create_clause = "CREATE %s TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.mode, self.name, self.columns.create_clause(), inherits_clause)
 
         if self.primary_key:
             pk_clause = "ALTER TABLE %s ADD PRIMARY KEY (%s);\n" % (self.name, ', '.join(c.name for c in self.primary_key))

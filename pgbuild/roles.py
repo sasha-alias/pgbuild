@@ -45,6 +45,7 @@ class Role(dict):
         self.name = name
         self.descriptor = descriptor
         self.relpath_start = relpath_start
+        self.jobs = []
 
     def build(self):
 
@@ -75,6 +76,9 @@ class Role(dict):
                 item_path = absrelpath(item_path, self.relpath_start)
                 custom_type = types.Type.load_from_yaml_file(item_path)
                 ret += custom_type.drop_clause() + custom_type.create_clause()
+
+            elif item_type == 'job':
+                self.jobs.append(item[item_type])
 
             else:
                 raise RoleError('Unknown role item type "%s"' % item_type)

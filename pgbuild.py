@@ -5,6 +5,7 @@ import traceback
 import psycopg2
 import pgbuild
 from pgbuild import builder
+import yaml
 
 
 def green(text):
@@ -41,7 +42,16 @@ def build(src, dest, build_format='psql'):
 
 if __name__ == '__main__':
 
-    parser = OptionParser()
+    usage = """Usage: pgbuild command argumetns [options]
+
+Commands:
+    build - make a build of application
+    deploy - deploy application to database
+    diff - diff two tables
+    ddl - print out a DDL of a table
+    yaml - print out yaml definition of a table"""
+
+    parser = OptionParser(usage=usage)
     parser.add_option('--format', dest='build_format', default='psql')
     parser.add_option('-t', '--traceback', action="store_true", dest='show_traceback', default=False)
     (options, args) = parser.parse_args()
@@ -64,6 +74,10 @@ if __name__ == '__main__':
 
         elif args[0] == 'build':
             build(args[1], args[2], options.build_format)
+
+        elif args[0] == 'yaml':
+            table = pgbuild.Table.load_from_location(args[1])
+            print yaml.dump(yaml.load(str(table)), default_flow_style=False)
 
         else:
             print red('Error:'), 'unknown command %s' % args[1]
