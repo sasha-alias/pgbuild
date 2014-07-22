@@ -165,7 +165,7 @@ class Column(_DBObject):
         text_types = ['character varying', 'varchar', 'character', 'char', 'text', 'hstore', 'bit varying']
         dtype = dtype[0:dtype.find('(')].rstrip() if dtype.find('(') > 0 else dtype  # remove length spec
         if dtype.lower() in text_types:
-            return adapt(str(value))
+            return value
         else:
             return value
 
@@ -596,7 +596,7 @@ class Table(object):
         else:
             inherits_clause = ''
 
-        create_clause = "CREATE %s TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.mode, self.name, self.columns.create_clause(), inherits_clause)
+        create_clause = u"CREATE %s TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.mode, self.name, self.columns.create_clause(), inherits_clause)
 
         if self.primary_key:
             pk_clause = "ALTER TABLE %s ADD PRIMARY KEY (%s);\n" % (self.name, ', '.join(c.name for c in self.primary_key))

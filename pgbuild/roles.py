@@ -66,7 +66,7 @@ class Role(dict):
                 func_path = item[item_type]
                 func_path = absrelpath(func_path, self.relpath_start)
                 function = functions.Function.load_from_file(func_path)
-                ret += function.script
+                ret += unicode(function.script, 'utf-8')
 
             elif item_type == 'sql':
                 ret += item[item_type].rstrip().rstrip(';')+';\n'
