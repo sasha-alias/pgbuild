@@ -13,6 +13,8 @@ role_tasks = """
 """
 
 def ansible_build(role, dest):
+    if os.path.exists(os.path.join(dest, role.name)):
+        shutil.rmtree(os.path.join(dest, role.name))
     os.makedirs(os.path.join(dest, role.name, 'templates'))
     os.makedirs(os.path.join(dest, role.name, 'files'))
     os.makedirs(os.path.join(dest, role.name, 'tasks'))

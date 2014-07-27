@@ -31,7 +31,8 @@ def build(src, dest, build_format='psql'):
     """ Build sql scripts for roles """
 
     dest = os.path.abspath(dest)
-    os.makedirs(dest)
+    if not os.path.exists(dest):
+        os.makedirs(dest)
     roles = pgbuild.roles.load_from_file(src)
     for role in roles:
         build_func = builder.builders.get(build_format)
@@ -53,6 +54,7 @@ Commands:
 
     parser = OptionParser(usage=usage)
     parser.add_option('--format', dest='build_format', default='psql')
+    parser.add_option('-o', '--overwrite', action="store_true", dest='overwrite', default=False)
     parser.add_option('-t', '--traceback', action="store_true", dest='show_traceback', default=False)
     (options, args) = parser.parse_args()
 
@@ -73,6 +75,12 @@ Commands:
             deploy(args[1], args[2])
 
         elif args[0] == 'build':
+            if len(args) < 3:
+                print red("No destination path pointed:\nUsage:\n  pgbuild descriptor.yaml destination_path")
+                sys.exit(-1)
+            if os.path.exists(args[2]) and not options.overwrite:
+                print red("Destination path already exists. To overwrite use -o (--overwrite) option:\nUsage:\n  pgbuild %s %s --overwrite" % (args[1], args[2]))
+                sys.exit(-1)
             build(args[1], args[2], options.build_format)
 
         elif args[0] == 'yaml':

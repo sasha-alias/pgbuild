@@ -4,18 +4,6 @@ import tables
 import functions
 import types
 
-
-def load_from_file(path):
-
-    ret = []
-    content = '\n'.join(file(path).readlines())
-    yaml_content = yaml.load(content)
-    for role_name in yaml_content.keys():
-        role = Role(role_name, yaml_content[role_name], os.path.dirname(os.path.abspath(path)))
-        ret.append(role)
-    return ret
-
-
 def full_path(path):
     """
     return full path
@@ -35,6 +23,35 @@ def absrelpath(path, start):
     ret_path = full_path(path)
     os.chdir(init_path)
     return ret_path
+
+
+def load_from_file(path):
+
+    ret = []
+    content = file(path).read()
+    yaml_content = yaml.load(content)
+
+    if isinstance(yaml_content, list):
+        for module in yaml_content:
+            if isinstance(module, str):
+                module = absrelpath(module, os.path.dirname(path))
+                module_content = yaml.load(file(module).read())
+                ret += get_roles(module_content, module)
+            else:
+                ret += get_roles(module, path)
+
+    else:
+        ret += get_roles(yaml_content, path)
+    return ret
+
+
+def get_roles(content, path):
+    ret = []
+    for role_name in content.keys():
+        role = Role(role_name, content[role_name], os.path.dirname(os.path.abspath(path)))
+        ret.append(role)
+    return ret
+
 
 class RoleError(Exception):
     pass
