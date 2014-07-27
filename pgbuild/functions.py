@@ -4,7 +4,7 @@ class Function(object):
     @classmethod
     def load_from_file(cls, path):
 
-        script = ''.join(file(path).readlines())
+        script = file(path).read()+'\n'
         return cls(script)
 
     def __init__(self, script):

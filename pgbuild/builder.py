@@ -1,60 +1,43 @@
 import os
+import shutil
 
-basic_role_tasks = """
+role_tasks = """
+
 - name: create .pgbuild/run directory
   file: path=/tmp/.pgbuild/run state=directory
 
-- name: transfer install.sql
-  copy: src=install.sql dest=/tmp/.pgbuild/run/install.sql
-
-- name: deploy install.sql
-  command: psql -f /tmp/.pgbuild/run/install.sql -d {{{{cluster_name}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
-  sudo: yes
-  sudo_user: postgres
-
-{jobs}
+{tasks}
 
 - name: delete .pgbuild/run directory
   file: path=/tmp/.pgbuild state=absent
 """
-
-shard_role_tasks = """
-- name: create .pgbuild/run directory
-  file: path=/tmp/.pgbuild/run state=directory
-
-- name: transfer install.sql
-  copy: src=install.sql dest=/tmp/.pgbuild/run/install.sql
-
-- name: run install.sql
-  command: psql -f /tmp/.pgbuild/run/install.sql -d {{{{cluster_name}}}}{{{{'_%02d'|format(item)}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
-  with_items: hostvars[inventory_hostname].shards
-  sudo: yes
-  sudo_user: postgres
-
-{jobs}
-
-- name: delete .pgbuild/run directory
-  file: path=/tmp/.pgbuild state=absent
-"""
-
-
 
 def ansible_build(role, dest):
+    os.makedirs(os.path.join(dest, role.name, 'templates'))
     os.makedirs(os.path.join(dest, role.name, 'files'))
     os.makedirs(os.path.join(dest, role.name, 'tasks'))
-    install_path = os.path.join(dest, role.name, 'files', 'install.sql')
-    install = role.build()
-    shard_tasks = inject_jobs(shard_role_tasks, role.jobs, shards=True)
-    basic_tasks = inject_jobs(basic_role_tasks, role.jobs, shards=False)
-    install_file = file(install_path, 'w')
-    install_file.write(install.encode('utf8'))
-    install_file.close()
+
+    entries = []
+    for task in role.tasks:
+        if task.task_type == 'copy':
+            install_path = os.path.join(dest, role.name, 'files', str(task.number)+'.csv')
+            shutil.copyfile(task.copy_from, install_path)
+        else:
+            install_path = os.path.join(dest, role.name, 'templates', str(task.number)+'.sql')
+            install_file = file(install_path, 'w')
+            install_file.write(task.sql_content.encode('utf8'))
+            install_file.close()
+
+        entries.append(task.transfer_entry)
+        if role.name.endswith('_shard'):
+            entries.append(task.shards_entry)
+        else:
+            entries.append(task.basic_entry)
+
     tasks_path = os.path.join(dest, role.name, 'tasks', 'main.yml')
     tasks_file = file(tasks_path, 'w')
-    if role.name.endswith('_shard'):
-        tasks_file.write(shard_tasks)
-    else:
-        tasks_file.write(basic_tasks)
+    tasks = role_tasks.format(tasks = ''.join(entries))
+    tasks_file.write(tasks)
     tasks_file.close()
 
 
@@ -84,8 +67,6 @@ def inject_jobs(tasks, jobs, shards):
     ret = [task % j for j in jobs]
     ret = '\n\n'.join(ret)
     return tasks.format(jobs=ret)
-
-
 
 builders = {
     'ansible': ansible_build,

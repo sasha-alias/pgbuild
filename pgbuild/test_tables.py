@@ -80,7 +80,6 @@ def test_1():
 
     table = tables.Table(str_table1)
 
-    #print table.create_clause()
     assert table.create_clause() == ddl1
 
 
@@ -144,8 +143,3 @@ ALTER TABLE my.table ADD PRIMARY KEY (col1, col2);
     assert expected == t1.alter_to(t2)
 
 
-#def test_6():
-#    import psycopg2
-#    conn = psycopg2.connect(database='sorm_db', user='postgres', port=5433)
-#    t = tables.Table.load_from_connection(conn, 'myschema.mytable')
-#    print t

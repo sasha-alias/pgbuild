@@ -45,42 +45,150 @@ class Role(dict):
         self.name = name
         self.descriptor = descriptor
         self.relpath_start = relpath_start
-        self.jobs = []
+        self.tasks = []
 
-    def build(self):
+        self._build_tasks()
 
-        ret = ''
-        for item in self.descriptor:
+
+    def _build_tasks(self):
+
+        for idx, item in enumerate(self.descriptor):
             item_type = item.keys()[0]
+
             if item_type == 'schema':
-                ret += 'CREATE SCHEMA IF NOT EXISTS %s;\n' % item[item_type]
+                sql = 'CREATE SCHEMA IF NOT EXISTS %s;\n' % item[item_type]
+                self.tasks.append(SQLTask(idx, item_type, sql))
 
             elif item_type == 'table':
 
                 table_path = item[item_type]
                 table_path = absrelpath(table_path, self.relpath_start)
                 table = tables.Table.load_from_yaml_file(table_path)
-                ret += table.create_clause()
+                sql = table.create_clause()
+                self.tasks.append(SQLTask(idx, item_type, sql))
 
             elif item_type == 'function':
                 func_path = item[item_type]
                 func_path = absrelpath(func_path, self.relpath_start)
                 function = functions.Function.load_from_file(func_path)
-                ret += unicode(function.script, 'utf-8')
+                sql = unicode(function.script, 'utf-8')
+                self.tasks.append(SQLTask(idx, item_type, sql))
 
             elif item_type == 'sql':
-                ret += item[item_type].rstrip().rstrip(';')+';\n'
+                sql = item[item_type].rstrip().rstrip(';')+';\n'
+                self.tasks.append(SQLTask(idx, item_type, sql))
 
             elif item_type == 'type':
                 item_path = item[item_type]
                 item_path = absrelpath(item_path, self.relpath_start)
                 custom_type = types.Type.load_from_yaml_file(item_path)
-                ret += custom_type.drop_clause() + custom_type.create_clause()
+                sql = custom_type.drop_clause() + custom_type.create_clause()
+                self.tasks.append(SQLTask(idx, item_type, sql))
 
-            elif item_type == 'job':
-                self.jobs.append(item[item_type])
+            #elif item_type == 'job':
+            #    self.jobs.append(item[item_type])
+
+            elif item_type == 'copy':
+                table= item[item_type]['table']
+                columns = item[item_type]['columns']
+                copy_from = item[item_type].get('from')
+                copy_from = absrelpath(copy_from, self.relpath_start)
+                copy_format = item[item_type].get('format')
+                delimiter = item[item_type].get('delimiter')
+                task = CSVTask(idx, item_type, table, columns,
+                    copy_from = copy_from,
+                    copy_format = copy_format,
+                    delimiter = delimiter
+                    )
+                self.tasks.append(task)
 
             else:
                 raise RoleError('Unknown role item type "%s"' % item_type)
 
-        return ret
+
+class SQLTask(object):
+
+    def __init__(self, number, task_type, sql_content):
+        self.number = number
+        self.task_type = task_type
+        self.sql_content = sql_content
+
+    @property
+    def transfer_entry(self):
+        return """
+- name: transfer {0}.sql
+  template: src={0}.sql dest=/tmp/.pgbuild/run/
+""".format(self.number)
+
+
+    @property
+    def shards_entry(self):
+
+        return """
+- name: deploy {0}.sql
+  command: psql -f /tmp/.pgbuild/run/{0}.sql -d {{{{cluster_name}}}}{{{{'_%02d'|format(item)}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
+  with_items: hostvars[inventory_hostname].shards
+  sudo: yes
+  sudo_user: postgres
+""".format(self.number)
+
+
+    @property
+    def basic_entry(self):
+
+        return """
+- name: deploy {0}.sql
+  command: psql -f /tmp/.pgbuild/run/{0}.sql -d {{{{cluster_name}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
+  sudo: yes
+  sudo_user: postgres
+""".format(self.number)
+
+
+class CSVTask(object):
+    def __init__(self, number, task_type, table, columns,
+        copy_from, copy_format, delimiter):
+        self.number = number
+        self.task_type = task_type
+        self.table = table
+        self.columns = columns
+        self.copy_from = copy_from
+        self.copy_format = copy_format
+        self.delimiter = delimiter
+
+    @property
+    def transfer_entry(self):
+        return """
+- name: transfer {0}.csv
+  copy: src={0}.csv dest=/tmp/.pgbuild/run/
+""".format(self.number)
+
+    @property
+    def shards_entry(self):
+        return """
+- name: deploy {number}.csv
+  command: psql -c "\COPY {table} ({columns}) FROM '/tmp/.pgbuild/run/{number}.csv' (FORMAT '{copy_format}', DELIMITER '{delimiter}')" -d {{{{cluster_name}}}}{{{{'_%02d'|format(item)}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
+  sudo: yes
+  sudo_user: postgres
+""".format(
+    number=self.number,
+    table=self.table,
+    columns=', '.join(self.columns),
+    copy_format=self.copy_format,
+    delimiter=self.delimiter
+    )
+
+    @property
+    def basic_entry(self):
+        return """
+- name: deploy {number}.csv
+  command: psql -c "\COPY {table} ({columns}) FROM '/tmp/.pgbuild/run/{number}.csv' (FORMAT '{copy_format}', DELIMITER '{delimiter}')" -d {{{{cluster_name}}}} -p {{{{port}}}} --set=ON_ERROR_STOP=1
+  sudo: yes
+  sudo_user: postgres
+""".format(
+    number=self.number,
+    table=self.table,
+    columns=', '.join(self.columns),
+    copy_format=self.copy_format,
+    delimiter=self.delimiter
+    )
+
