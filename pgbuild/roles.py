@@ -112,10 +112,12 @@ class Role(dict):
                 copy_from = absrelpath(copy_from, self.relpath_start)
                 copy_format = item[item_type].get('format')
                 delimiter = item[item_type].get('delimiter')
+                quote = item[item_type].get('quote')
                 task = CSVTask(idx, item_type, table, columns,
                     copy_from = copy_from,
                     copy_format = copy_format,
-                    delimiter = delimiter
+                    delimiter = delimiter,
+                    quote = quote
                     )
                 self.tasks.append(task)
 
@@ -163,7 +165,7 @@ class SQLTask(object):
 
 class CSVTask(object):
     def __init__(self, number, task_type, table, columns,
-        copy_from, copy_format, delimiter):
+        copy_from, copy_format, delimiter, quote):
         self.number = number
         self.task_type = task_type
         self.table = table
@@ -171,6 +173,7 @@ class CSVTask(object):
         self.copy_from = copy_from
         self.copy_format = copy_format
         self.delimiter = delimiter
+        self.quote = quote
 
     @property
     def transfer_entry(self):
@@ -209,3 +212,21 @@ class CSVTask(object):
     delimiter=self.delimiter
     )
 
+    @property
+    def sql_content(self):
+        return """
+COPY {table} ({columns})
+    FROM '{copy_from}'
+    WITH
+        {copy_format}
+        DELIMITER '{delimiter}'
+        QUOTE '{quote}';
+""".format(
+    number=self.number,
+    table=self.table,
+    copy_from=self.copy_from,
+    columns=', '.join(self.columns),
+    copy_format=self.copy_format,
+    delimiter=self.delimiter,
+    quote=self.quote
+)

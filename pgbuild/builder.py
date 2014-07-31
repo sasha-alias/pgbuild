@@ -1,6 +1,6 @@
 import os
 import shutil
-
+import sys
 role_tasks = """
 
 - name: create .pgbuild/run directory
@@ -44,12 +44,19 @@ def ansible_build(role, dest):
 
 
 def psql_build(role, dest):
-    os.makedirs(os.path.join(dest, role.name))
-    install_path = os.path.join(dest, role.name, 'install.sql')
-    install = role.build()
-    install_file = file(install_path, 'w')
-    install_file.write(install.encode('utf8'))
-    install_file.close()
+    if os.path.exists(os.path.join(dest, role.name)):
+        shutil.rmtree(os.path.join(dest, role.name))
+    os.makedirs(os.path.join(dest, role.name, 'templates'))
+    entries = []
+    for task in role.tasks:
+        fpath = os.path.join(dest, role.name, 'templates', '{}.sql'.format(task.number))
+        print fpath
+        open(fpath, 'w').write(task.sql_content.encode('utf-8'))
+        entries.append(fpath)
+    install_sql = os.path.join(dest, role.name, 'install.sql')
+    install_yaml = os.path.join(dest, role.name, 'install.yaml')
+    open(install_sql, 'w').write(';\n'.join(["\i '{}'".format(e) for e in entries]) + ';\n')
+    open(install_yaml, 'w').write('\n'.join([" - '{}'".format(e) for e in entries]))
 
 def inject_jobs(tasks, jobs, shards):
     if shards:

@@ -297,7 +297,7 @@ class Index(_DBObject):
             name = '%s.%s' % (schema, self.name)
         else:
             name = self.name
-        ret = 'DROP INDEX CONCURRENTLY IF EXISTS %s;\n' % name
+        ret = 'DROP INDEX IF EXISTS %s;\n' % name
         return ret
 
 
