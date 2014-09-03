@@ -25,7 +25,7 @@ def ansible_build(role, dest):
             install_path = os.path.join(dest, role.name, 'files', str(task.number)+'.csv')
             shutil.copyfile(task.copy_from, install_path)
         else:
-            install_path = os.path.join(dest, role.name, 'templates', str(task.number)+'.sql')
+            install_path = os.path.join(dest, role.name, 'files', str(task.number)+'.sql')
             install_file = file(install_path, 'w')
             install_file.write(task.sql_content.encode('utf8'))
             install_file.close()
@@ -47,9 +47,10 @@ def psql_build(role, dest):
     if os.path.exists(os.path.join(dest, role.name)):
         shutil.rmtree(os.path.join(dest, role.name))
     os.makedirs(os.path.join(dest, role.name, 'templates'))
+    os.makedirs(os.path.join(dest, role.name, 'files'))
     entries = []
     for task in role.tasks:
-        fpath = os.path.join(dest, role.name, 'templates', '{}.sql'.format(task.number))
+        fpath = os.path.join(dest, role.name, 'files', '{}.sql'.format(task.number))
         print fpath
         open(fpath, 'w').write(task.sql_content.encode('utf-8'))
         entries.append(fpath)

@@ -136,7 +136,7 @@ class SQLTask(object):
     def transfer_entry(self):
         return """
 - name: transfer {0}.sql
-  template: src={0}.sql dest=/tmp/.pgbuild/run/
+  copy: src={0}.sql dest=/tmp/.pgbuild/run/
 """.format(self.number)
 
 
