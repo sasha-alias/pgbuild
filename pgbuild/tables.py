@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 """
 Postgresql tables definition in YAML.
 
@@ -49,6 +50,7 @@ query_columns_info = """
 SELECT
     a.attname "name",
     a.atttypid::regtype "type",
+    atttypmod "max_length",
     a.attnotnull "not_null",
     a.atthasdef "has_default",
     c.adsrc "default_value",
@@ -122,10 +124,10 @@ class _DBObject(object):
     """ Two DBObjects are the same if their properties are equal """
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return unicode(self.__dict__) == unicode(other.__dict__)
 
     def __ne__(self, other):
-        return not self.__dict__ == other.__dict__
+        return not unicode(self.__dict__) == unicode(other.__dict__)
 
     def __hash__(self):
         return hash(frozenset(self.__dict__))
@@ -200,7 +202,10 @@ class Column(_DBObject):
         statements = ''
         if self.type != other.type:
             statements += alter_column + "TYPE %s;\n" % other.type
-        if self.default != other.default:
+        if (
+            (type(self.default) == unicode and self.default.encode("utf-8") != other.default)
+            or self.default != other.default
+        ):
             if other.default is not None:
                 statements += alter_column + "SET DEFAULT %s;\n" % other.default
             else:
@@ -210,7 +215,7 @@ class Column(_DBObject):
                 statements += alter_column + "SET NOT NULL;\n"
             else:
                 statements += alter_column + "DROP NOT NULL;\n"
-        if self.description != other.description:
+        if self.description and self.description.encode("utf-8") != other.description:
             statements += "COMMENT ON COLUMN %s.%s IS '%s';\n" % (table_name, self.name, other.description)
 
         return statements
@@ -421,6 +426,11 @@ class Table(object):
         connection - open DBAPI2 connection
         table_name - name of a table to make instance of
         """
+        split = table_name.split(".")
+        if len(split) == 2:
+            schema = split[0]
+        else:
+            schema = "public"
 
         cur = connection.cursor()
         cur.execute(query_table_info, (table_name,))
@@ -446,31 +456,29 @@ class Table(object):
         for c in columns_info:
             col_name = c[0]
             col_type = c[1]
-            col_not_null = c[2]
-            col_has_default = c[3]
-            col_default_value = c[4]
-            col_description = c[5]
+            col_max_length = c[2]
+            col_not_null = c[3]
+            col_has_default = c[4]
+            col_default_value = c[5]
+            col_description = c[6]
+
+            if col_max_length != -1:
+                col_type = "{}({})".format(col_type, col_max_length - 4)
+
+            col_dict = {
+                'name': col_name,
+                'type': col_type,
+                'not_null': col_not_null,
+                'description': col_description
+            }
             if col_has_default:
-                col_dict = {
-                    'name': col_name,
-                    'type': col_type,
-                    'not_null': col_not_null,
-                    'default': col_default_value,
-                    'description': col_description
-                }
-            else:
-                col_dict = {
-                    'name': col_name,
-                    'type': col_type,
-                    'not_null': col_not_null,
-                    'description': col_description
-                }
+                col_dict['default'] = col_default_value
             columns.append(col_dict)
 
         indexes = []
         for i in indexes_info:
             ind_dict = {
-                'name': i[0],
+                'name': i[0].replace("{}.".format(schema), ""),
                 'unique': i[1],
                 'method': i[2],
                 'fields': i[3]
@@ -650,7 +658,7 @@ class Table(object):
             statements += "ALTER TABLE %s ADD PRIMARY KEY (%s);\n" % (self.name, ', '.join(c.name for c in other.primary_key))
 
         # description
-        if self.description != other.description:
+        if self.description and self.description.encode("utf-8") != other.description:
             statements += "COMMENT ON TABLE %s IS '%s';\n" % (self.name, other.description)
 
         return statements
