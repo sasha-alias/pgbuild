@@ -59,6 +59,11 @@ Now to put it all together:
         - type: path/to/mytype.yaml
         - function: path/to/myfunction.sql
 
+For running arbitrary SQL query during application deployment use the the following syntax:
+
+    myapp:
+        - sql: ALTER TABLE myschema.mytable ...
+
 ### Objects Deployment and Diffing
 
 In order to deploy a table described in yaml file to a single instance of database use the following command:
