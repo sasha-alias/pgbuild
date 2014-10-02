@@ -53,7 +53,7 @@ For stored functions it is even simpler, just store them in sql files with CREAT
 
 Now to put it all together:
     
-    - myapp:
+    myapp:
         - schema: myschema
         - table: path/to/mytable.yaml
         - type: path/to/mytype.yaml
@@ -63,12 +63,12 @@ Now to put it all together:
 
 In order to deploy a table described in yaml file to a single instance of database use the following command:
 
-    pgbuild deploy path/to/mytable.yaml postgresq://user@host:port/dbname
+    pgbuild deploy path/to/mytable.yaml postgresql://user@host:port/dbname
 
 This will drop a table if such exists and create new one according to description from file.
 
 
-In order to take a look a DDL statement of table from yaml file execute:
+In order to take a look at DDL statement of a table from yaml file execute:
 
     pgbuild ddl path/to/mytable.yaml
 
@@ -85,15 +85,14 @@ The similar way by defining different targets it's possible to compare remote an
 In order to deploy a database application or a single component you have to describe it first using yaml syntax as described above.
 Then you can create a build.
 
-    pgbuild path/to/myapp.yaml local/destination/path
+    pgbuild build path/to/myapp.yaml local/destination/path
 
 Build contains ready to deploy sql scripts.
 By default scripts are created for being run with psql.
 
-It's possible though to create playbooks for Ansible by defining a builder:
+It's possible though to create playbooks for Ansible by defining a builder format:
 
-    pgbuild path/to/myapp.yaml local/destination/path --format=ansible
+    pgbuild build path/to/myapp.yaml local/destination/path --format=ansible
 
 So you can deploy them either using psql or Ansible.
-
 

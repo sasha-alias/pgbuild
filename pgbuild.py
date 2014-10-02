@@ -76,10 +76,10 @@ Commands:
 
         elif args[0] == 'build':
             if len(args) < 3:
-                print red("No destination path pointed:\nUsage:\n  pgbuild descriptor.yaml destination_path")
+                print red("No destination path pointed:\nUsage:\n  pgbuild build descriptor.yaml destination_path")
                 sys.exit(-1)
             if os.path.exists(args[2]) and not options.overwrite:
-                print red("Destination path already exists. To overwrite use -o (--overwrite) option:\nUsage:\n  pgbuild %s %s --overwrite" % (args[1], args[2]))
+                print red("Destination path already exists. To overwrite use -o (--overwrite) option:\nUsage:\n  pgbuild build %s %s --overwrite" % (args[1], args[2]))
                 sys.exit(-1)
             build(args[1], args[2], options.build_format)
 
