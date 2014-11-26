@@ -604,12 +604,15 @@ class Table(object):
         else:
             inherits_clause = ''
 
-        create_clause = u"CREATE %s TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.mode, self.name, self.columns.create_clause(), inherits_clause)
-
+        columns_list = self.columns.create_clause()
         if self.primary_key:
-            pk_clause = "ALTER TABLE %s ADD PRIMARY KEY (%s);\n" % (self.name, ', '.join(c.name for c in self.primary_key))
+            pk_clause = ",\n    PRIMARY KEY (%s)" % (', '.join(c.name for c in self.primary_key),)
         else:
             pk_clause = ""
+        columns_list = columns_list + pk_clause
+
+        create_clause = u"CREATE %s TABLE IF NOT EXISTS %s (\n%s\n)%s;\n" % (self.mode, self.name, columns_list, inherits_clause)
+
 
         comments_clause = ''
         if self.description is not None:
@@ -621,7 +624,7 @@ class Table(object):
 
         check_clause = self.check.create_clause()
 
-        return create_clause + pk_clause + comments_clause + indexes_clause + check_clause
+        return create_clause + comments_clause + indexes_clause + check_clause
 
     def alter_to(self, other):
         """ Return alter script for getting own state to other """
